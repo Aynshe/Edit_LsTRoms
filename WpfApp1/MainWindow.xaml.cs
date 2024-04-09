@@ -93,6 +93,8 @@ namespace WpfApp1
             romsDataGrid.Columns.Add(new DataGridTextColumn { Header = "-arguments or false", Binding = new Binding("[7]") });
             romsDataGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "JoyToKey", Binding = new Binding("[8]") });
             romsDataGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "nomousy", Binding = new Binding("[9]") });
+            romsDataGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "JoyToKey", Binding = new Binding("[8]") });
+            romsDataGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "nomousy", Binding = new Binding("[9]") });
 
 
             List<string[]> allGameDetails = new List<string[]>();
@@ -179,7 +181,7 @@ namespace WpfApp1
             if (editBox.Text == "Text...")
             {
                 editBox.Text = "";
-                editBox.Foreground = Brushes.Black; // Changez la couleur du texte pour qu'il soit visible
+                editBox.Foreground = Brushes.Black;
             }
         }
 
@@ -188,8 +190,7 @@ namespace WpfApp1
             if (string.IsNullOrWhiteSpace(editBox.Text))
             {
                 editBox.Text = "Text...";
-                editBox.Foreground = Brushes.Gray; // Revert à la couleur de texte gris clair
-            }
+                editBox.Foreground = Brushes.Gray;
         }
 
         private void UpdateKeys()
