@@ -1,3 +1,3 @@
 # Edit_LsTRoms
 
-![Edit_LsTRoms](https://github.com/Aynshe/Edit_LsTRoms/assets/1908827/a9da1343-c55f-4f54-af66-d849d156f582)
+![2024-04-09_18-00-04](https://github.com/Aynshe/Edit_LsTRoms/assets/1908827/87c2f190-9872-4b10-84c3-f3c198639589)
