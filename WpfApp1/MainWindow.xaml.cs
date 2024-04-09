@@ -91,8 +91,9 @@ namespace WpfApp1
             romsDataGrid.Columns.Add(new DataGridTextColumn { Header = "-target=", Binding = new Binding("[5]") });
             romsDataGrid.Columns.Add(new DataGridTextColumn { Header = "delayForStart", Binding = new Binding("[6]") });
             romsDataGrid.Columns.Add(new DataGridTextColumn { Header = "-arguments or false", Binding = new Binding("[7]") });
-            romsDataGrid.Columns.Add(new DataGridTextColumn { Header = "JoyToKey", Binding = new Binding("[8]") });
-            romsDataGrid.Columns.Add(new DataGridTextColumn { Header = "nomousy", Binding = new Binding("[9]") });
+            romsDataGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "JoyToKey", Binding = new Binding("[8]") });
+            romsDataGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "nomousy", Binding = new Binding("[9]") });
+
 
             List<string[]> allGameDetails = new List<string[]>();
             foreach (var systemEntry in systems)
@@ -149,7 +150,6 @@ namespace WpfApp1
                 MessageBox.Show("Fichier roms.ini non trouvé.");
             }
         }
-
 
         private void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
@@ -316,10 +316,6 @@ namespace WpfApp1
             }
         }
 
-
-
-
-
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string searchTerm = searchBox.Text.ToLower();
@@ -358,6 +354,5 @@ namespace WpfApp1
 
             romsDataGrid.ItemsSource = filteredGameDetails; // Mettre à jour le DataGrid avec les jeux filtrés
         }
-
     }
 }
