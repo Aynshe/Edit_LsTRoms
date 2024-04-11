@@ -14,9 +14,31 @@
             <TextBlock Text="search..." Foreground="Gray" FontStyle="Italic" Margin="0,5,0,0" HorizontalAlignment="Center" />
             <TextBox Name="searchBox" Width="100" Height="30" Margin="0,10,0,0" TextChanged="SearchBox_TextChanged" />
             <CheckBox Name="toggleSelectionUnit" Content="Edition texte par lot" Checked="ToggleSelectionUnit_Checked" Unchecked="ToggleSelectionUnit_Unchecked" Margin="28,10,0,0" />
-            <TextBox Name="editBox" Width="100" Height="30" Margin="0,10,0,0" Foreground="Gray" Text="Text..." GotFocus="editBox_GotFocus" LostFocus="editBox_LostFocus"/>
+            <TextBox Name="editBox" Width="100" Height="30" Margin="0,10,0,0" Foreground="Gray" Text="Text..." GotFocus="EditBox_GotFocus" LostFocus="EditBox_LostFocus"/>
             <Button Name="applyButton" Content="Appliquer" Width="100" Height="30" Click="ApplyButton_Click" />
             <Button Name="deleteGamesButton" Content="Supprimer les jeux sélectionnés" Margin="0,90,0,0" Width="200" Height="30" Click="DeleteGamesButton_Click" />
+            <StackPanel Orientation="Horizontal" Margin="0,100,0,0">
+                <TextBlock Text="DS Gun4IR RAW input" VerticalAlignment="Center" />
+                <ToggleButton Name="toggleDSUpdtlock" Width="60" Height="20" Margin="10,0,0,0" Checked="ToggleDSUpdtlock_Checked" Unchecked="ToggleDSUpdtlock_Unchecked">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Content" Value="Off" />
+                            <Style.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Content" Value="On" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+                <TextBlock Text="(?)" Margin="4,0,0,20" VerticalAlignment="Center">
+                    <TextBlock.ToolTip>
+                        <ToolTip Content="update config.ini of HID Gun4IR/Mayflash when launching a game" />
+                    </TextBlock.ToolTip>
+                </TextBlock>
+            </StackPanel>
+
+
         </StackPanel>
         <Grid>
             <DataGrid Name="romsDataGrid" AutoGenerateColumns="False" SelectionUnit="FullRow" />

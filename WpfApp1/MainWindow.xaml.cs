@@ -11,13 +11,15 @@ namespace WpfApp1
 {
     public partial class MainWindow : Window
     {
-        private Dictionary<string, List<string[]>> systems = new Dictionary<string, List<string[]>>();
-        private Dictionary<string, int> systemCounters = new Dictionary<string, int>();
-        private Dictionary<string, Dictionary<string, int>> categoryCounters = new Dictionary<string, Dictionary<string, int>>();
+            private readonly Dictionary<string, List<string[]>> systems = new Dictionary<string, List<string[]>>();
+            private readonly Dictionary<string, int> systemCounters = new Dictionary<string, int>();
+            private readonly Dictionary<string, Dictionary<string, int>> categoryCounters = new Dictionary<string, Dictionary<string, int>>();
 
         public MainWindow()
         {
             InitializeComponent();
+
+            UpdateToggleButtonState();
 
             // Trouver le fichier roms.ini
             string romsIniPath = FindRomsIniFile(Directory.GetCurrentDirectory());
@@ -62,23 +64,16 @@ namespace WpfApp1
 
         private string FindRomsIniFile(string directory)
         {
-            string[] files = null;
             try
             {
-                files = Directory.GetFiles(directory, "roms.ini", SearchOption.AllDirectories);
+                return Directory.GetFiles(directory, "roms.ini", SearchOption.AllDirectories).FirstOrDefault();
             }
             catch (UnauthorizedAccessException) { }
             catch (PathTooLongException) { }
 
-            if (files != null && files.Length > 0)
-            {
-                return files[0]; // Retourne le premier fichier roms.ini trouvé
-            }
-            else
-            {
-                return null; // Aucun fichier roms.ini trouvé
-            }
+            return null;
         }
+
 
         private void UpdateDataGrid()
         {
@@ -163,8 +158,7 @@ namespace WpfApp1
                 var column = cell.Column as DataGridBoundColumn;
                 if (column != null)
                 {
-                    var c = column.Binding as Binding;
-                    var data = cell.Item as string[];
+                   var data = cell.Item as string[];
                     data[Array.IndexOf(romsDataGrid.Columns.Cast<DataGridColumn>().ToArray(), cell.Column)] = editBox.Text;
                 }
             }
@@ -173,7 +167,7 @@ namespace WpfApp1
             UpdateDataGrid(); // Mettre à jour le DataGrid pour refléter les modifications
         }
 
-        private void editBox_GotFocus(object sender, RoutedEventArgs e)
+        private void EditBox_GotFocus(object sender, RoutedEventArgs e)
         {
             if (editBox.Text == "Text...")
             {
@@ -182,7 +176,7 @@ namespace WpfApp1
             }
         }
 
-        private void editBox_LostFocus(object sender, RoutedEventArgs e)
+        private void EditBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(editBox.Text))
             {
@@ -314,6 +308,70 @@ namespace WpfApp1
                 MessageBox.Show("Fichier roms.ini non trouvé.");
             }
         }
+
+        private void UpdateToggleButtonState()
+        {
+            string configFile = ".config";
+            bool isDSUpdtlockEnabled = false; // Valeur par défaut
+
+            // Vérifier si le fichier de configuration existe et lire la valeur de DSUpdtlock
+            if (File.Exists(configFile))
+            {
+                string[] lines = File.ReadAllLines(configFile);
+                foreach (string line in lines)
+                {
+                    if (line.StartsWith("DSUpdtlock="))
+                    {
+                        isDSUpdtlockEnabled = line.Split('=')[1].Trim().ToLower() == "true";
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // Créer le fichier de configuration avec une valeur par défaut
+                UpdateConfigFile("DSUpdtlock=false");
+            }
+
+            // Mettre à jour le bouton ToggleButton avec la valeur lue du fichier de configuration
+            toggleDSUpdtlock.IsChecked = isDSUpdtlockEnabled;
+            toggleDSUpdtlock.Content = isDSUpdtlockEnabled ? "On" : "Off";
+        }
+
+
+        private void ToggleDSUpdtlock_Checked(object sender, RoutedEventArgs e)
+        {
+            // Mettre à jour le fichier de configuration lorsque la case est cochée
+            UpdateConfigFile("DSUpdtlock=true");
+
+            // Mettre à jour le texte du bouton
+            toggleDSUpdtlock.Content = "On";
+        }
+
+        private void ToggleDSUpdtlock_Unchecked(object sender, RoutedEventArgs e)
+        {
+            // Mettre à jour le fichier de configuration lorsque la case est décochée
+            UpdateConfigFile("DSUpdtlock=false");
+
+            // Mettre à jour le texte du bouton
+            toggleDSUpdtlock.Content = "Off";
+        }
+
+        private void UpdateConfigFile(string newLine)
+        {
+            string configFile = ".config";
+            string[] lines = File.ReadAllLines(configFile);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].StartsWith("DSUpdtlock="))
+                {
+                    lines[i] = newLine;
+                    break;
+                }
+            }
+            File.WriteAllLines(configFile, lines);
+        }
+
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
