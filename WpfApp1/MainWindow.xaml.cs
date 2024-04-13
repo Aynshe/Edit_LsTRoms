@@ -217,6 +217,26 @@ namespace WpfApp1
             }
         }
 
+        private void UpdateConfigFileWithNewSystem(string newSystem)
+        {
+            string configFile = ".config";
+            List<string> lines = File.ReadAllLines(configFile).ToList();
+
+            // Recherche de la ligne contenant la section [systems]
+            int systemsIndex = lines.FindIndex(line => line.Trim() == "[systems]");
+            if (systemsIndex != -1)
+            {
+                // Vérifiez si le nouveau système existe déjà dans la section [systems]
+                int existingSystemIndex = lines.FindIndex(systemsIndex + 1, line => line.Trim() == newSystem);
+                if (existingSystemIndex == -1)
+                {
+                    // Si le nouveau système n'existe pas encore, ajoutez-le après la section [systems]
+                    lines.Insert(systemsIndex + 1, newSystem);
+                    File.WriteAllLines(configFile, lines);
+                }
+            }
+        }
+
         private void AddGameButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CategoryDialog(systems.Keys.ToList(), systems.SelectMany(s => s.Value.Select(v => v[0].Split('_')[0])).Distinct().ToList());
@@ -229,6 +249,9 @@ namespace WpfApp1
                     systems[system] = new List<string[]>();
                     systemCounters[system] = 0;
                     categoryCounters[system] = new Dictionary<string, int>();
+
+                    // Ajouter le nouveau système au fichier .config
+                    UpdateConfigFileWithNewSystem(system);
                 }
                 string category = dialog.Category;
                 if (!string.IsNullOrEmpty(dialog.NewCategory))
@@ -243,6 +266,51 @@ namespace WpfApp1
                 string key = $"{category}_{++categoryCounters[system][category]}";
                 systems[system].Add(new string[] { key, "", "", "", "", "", "", "", "" });
                 UpdateDataGrid();
+            }
+        }
+/// <summary>
+/// zone debut delete
+/// </summary>
+
+        private void RemoveEmptySystems()
+        {
+            // Récupérer les systèmes sans catégorie
+            List<string> emptySystems = systems.Where(system => system.Value.Count == 0).Select(system => system.Key).ToList();
+
+            // Supprimer les sections vides du fichier roms.ini
+            string romsIniPath = FindRomsIniFile(Directory.GetCurrentDirectory());
+            if (romsIniPath != null)
+            {
+                List<string> romsIniLines = File.ReadAllLines(romsIniPath).ToList();
+
+                foreach (var emptySystem in emptySystems)
+                {
+                    romsIniLines.RemoveAll(line => line.Trim() == $"[{emptySystem}]");
+                }
+
+                File.WriteAllLines(romsIniPath, romsIniLines);
+            }
+        }
+
+        private void UpdateConfigFileWithRemovedSystems()
+        {
+            string configFile = ".config";
+            List<string> lines = File.ReadAllLines(configFile).ToList();
+
+            // Recherche de la ligne contenant la section [systems]
+            int systemsIndex = lines.FindIndex(line => line.Trim() == "[systems]");
+            if (systemsIndex != -1)
+            {
+                // Suppression des noms de système qui n'ont plus de catégorie
+                foreach (var system in systems.Keys)
+                {
+                    if (!systems[system].Any())
+                    {
+                        lines.RemoveAll(line => line.Trim() == system);
+                    }
+                }
+
+                File.WriteAllLines(configFile, lines);
             }
         }
 
@@ -266,6 +334,8 @@ namespace WpfApp1
                 RemoveGameFromSystem(systemName, key);
             }
 
+            RemoveEmptySystems(); // Supprimer les systèmes sans catégorie du fichier roms.ini
+            UpdateConfigFileWithRemovedSystems(); // Mettre à jour la section [systems] du fichier .config
             UpdateDataGrid();
             SaveData();
         }
@@ -274,6 +344,61 @@ namespace WpfApp1
         {
             DeleteSelectedGames();
         }
+
+        private void RemoveSystemIfNoGames()
+        {
+            // Récupérer les systèmes sans clé de jeu
+            List<string> systemsWithoutGames = systems.Where(system => system.Value.Count == 0).Select(system => system.Key).ToList();
+
+            // Supprimer les sections de ces systèmes du fichier roms.ini
+            string romsIniPath = FindRomsIniFile(Directory.GetCurrentDirectory());
+            if (romsIniPath != null)
+            {
+                List<string> romsIniLines = File.ReadAllLines(romsIniPath).ToList();
+
+                foreach (var system in systemsWithoutGames)
+                {
+                    romsIniLines.RemoveAll(line => line.Trim() == $"[{system}]");
+                }
+
+                File.WriteAllLines(romsIniPath, romsIniLines);
+            }
+        }
+
+        private void RemoveEmptySystemsFromRomsIni()
+        {
+            // Récupérer les systèmes sans clé de jeu ni de catégorie
+            List<string> emptySystems = systems.Where(system => system.Value.Count == 0).Select(system => system.Key).ToList();
+
+            // Supprimer les sections vides du fichier roms.ini
+            string romsIniPath = FindRomsIniFile(Directory.GetCurrentDirectory());
+            if (romsIniPath != null)
+            {
+                List<string> romsIniLines = File.ReadAllLines(romsIniPath).ToList();
+
+                foreach (var emptySystem in emptySystems)
+                {
+                    // Recherche de la ligne correspondant à la section du système dans le fichier roms.ini
+                    int startIndex = romsIniLines.FindIndex(line => line.Trim() == $"[{emptySystem}]");
+                    if (startIndex != -1)
+                    {
+                        // Supprimer toutes les lignes jusqu'à la prochaine section ou la fin du fichier
+                        int endIndex = romsIniLines.FindIndex(startIndex + 1, line => line.StartsWith("["));
+                        if (endIndex == -1)
+                        {
+                            endIndex = romsIniLines.Count;
+                        }
+                        romsIniLines.RemoveRange(startIndex, endIndex - startIndex);
+                    }
+                }
+
+                File.WriteAllLines(romsIniPath, romsIniLines);
+            }
+        }
+
+        /// <summary>
+        /// zone fin delete
+        /// </summary>
 
         private void SaveData()
         {
@@ -290,22 +415,70 @@ namespace WpfApp1
                 foreach (var systemEntry in systems)
                 {
                     string system = systemEntry.Key;
-                    romsIniLines.Add($"[{system}]");
-                    foreach (var gameDetails in systemEntry.Value)
+                    if (systemEntry.Value.Count > 0) // Ajouter seulement les systèmes avec des jeux
                     {
-                        string key = gameDetails[0];
-                        string values = string.Join("|", gameDetails.Skip(1));
-                        romsIniLines.Add($"{key} = {values}");
+                        romsIniLines.Add($"[{system}]");
+                        foreach (var gameDetails in systemEntry.Value)
+                        {
+                            string key = gameDetails[0];
+                            string values = string.Join("|", gameDetails.Skip(1));
+                            romsIniLines.Add($"{key} = {values}");
+                        }
                     }
                 }
 
                 File.WriteAllLines(romsIniPath, romsIniLines);
+
+                // Supprimer les sections de systèmes vides du fichier roms.ini
+                RemoveEmptySystemsFromRomsIni();
+
                 // Rafraîchir la liste après la sauvegarde
                 UpdateDataGrid();
+
+                // Assurez-vous de mettre à jour les données après la sauvegarde
+                string[] lines = File.ReadAllLines(romsIniPath);
+                UpdateSystemsFromRomsIni(lines);
             }
             else
             {
                 MessageBox.Show("Fichier roms.ini non trouvé.");
+            }
+        }
+
+        private void UpdateSystemsFromRomsIni(string[] lines)
+        {
+            // Effacer les données existantes
+            systems.Clear();
+            systemCounters.Clear();
+            categoryCounters.Clear();
+
+            string currentSystem = null;
+            foreach (string line in lines)
+            {
+                if (line.StartsWith("[") && line.EndsWith("]"))
+                {
+                    // C'est un système
+                    currentSystem = line.Trim('[', ']');
+                    systems[currentSystem] = new List<string[]>();
+                    systemCounters[currentSystem] = 0;
+                    categoryCounters[currentSystem] = new Dictionary<string, int>();
+                }
+                else if (line.Contains("="))
+                {
+                    // C'est une entrée de jeu
+                    var parts = line.Split('=');
+                    string key = parts[0].Trim();
+                    var gameDetails = parts[1].Split('|').Select(detail => detail.Trim()).ToArray();
+                    systems[currentSystem].Add(new string[] { key }.Concat(gameDetails).ToArray());
+
+                    // Mettre à jour categoryCounters
+                    string category = key.Split('_')[0];
+                    int number = int.Parse(key.Split('_')[1]);
+                    if (!categoryCounters[currentSystem].ContainsKey(category) || number > categoryCounters[currentSystem][category])
+                    {
+                        categoryCounters[currentSystem][category] = number;
+                    }
+                }
             }
         }
 
