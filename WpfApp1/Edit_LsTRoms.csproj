@@ -89,6 +89,12 @@
     <Compile Include="CategoryDialog.xaml.cs">
       <DependentUpon>CategoryDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EditAhk.xaml.cs">
+      <DependentUpon>EditAhk.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SelectTypeDialog.xaml.cs">
+      <DependentUpon>SelectTypeDialog.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -102,6 +108,14 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="CategoryDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditAhk.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SelectTypeDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

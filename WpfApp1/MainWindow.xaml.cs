@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace WpfApp1
 {
@@ -56,6 +58,9 @@ namespace WpfApp1
                         }
                     }
                 }
+
+                // mettre à jour la liste des fichiers .ahk
+                romsDataGrid.SelectionChanged += RomsDataGrid_SelectionChanged;
 
                 // Mettre à jour le DataGrid
                 UpdateDataGrid();
@@ -141,7 +146,7 @@ namespace WpfApp1
             }
             else
             {
-                MessageBox.Show("Fichier roms.ini non trouvé.");
+                MessageBox.Show("roms.ini file not found.");
             }
         }
 
@@ -149,7 +154,7 @@ namespace WpfApp1
         {
             if (romsDataGrid.SelectionUnit != DataGridSelectionUnit.CellOrRowHeader)
             {
-                MessageBox.Show("Veuillez passer en mode de sélection de cellule pour modifier le texte des cellules.");
+                MessageBox.Show("Please switch to cell selection mode to edit cell text.");
                 return;
             }
 
@@ -441,7 +446,7 @@ namespace WpfApp1
             }
             else
             {
-                MessageBox.Show("Fichier roms.ini non trouvé.");
+                MessageBox.Show("roms.ini file not found.");
             }
         }
 
@@ -544,6 +549,607 @@ namespace WpfApp1
             }
             File.WriteAllLines(configFile, lines);
         }
+
+
+        private void RomsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Réinitialiser les ListBox
+            ahkFilesListBox.ItemsSource = null;
+            ahkFilesListBoxGame.ItemsSource = null;
+            ahkFilesListBoxCustom.ItemsSource = null;
+
+            if (romsDataGrid.SelectedItem != null)
+            {
+                string[] selectedGame = romsDataGrid.SelectedItem as string[];
+                string systemName = selectedGame[0];
+                string gameName = selectedGame[2]; // Récupérer le nom du jeu sélectionné
+
+                // Construire le chemin du dossier du système correspondant
+                string systemFolderPath = Path.Combine(Directory.GetCurrentDirectory(), systemName);
+
+                // Charger les fichiers .ahk du dossier du système correspondant
+                List<string> systemAhkFiles = LoadAhkFiles(systemFolderPath);
+
+                if (!string.IsNullOrEmpty(gameName))
+                {
+                    // Construire le chemin du fichier .ahk correspondant au jeu sélectionné
+                    string gameAhkFile = $"{gameName}.ahk"; // Nom du fichier .ahk
+
+                    // Vérifier si le fichier .ahk du jeu existe dans le dossier du système
+                    if (systemAhkFiles.Contains(gameAhkFile))
+                    {
+                        // Afficher le fichier .ahk correspondant au jeu sélectionné
+                        ahkFilesListBoxGame.ItemsSource = new List<string> { gameAhkFile };
+                    }
+                    else
+                    {
+                        // Afficher "No AutoHotkey game found" si aucun fichier .ahk correspondant au jeu n'est trouvé
+                        ahkFilesListBoxGame.ItemsSource = new List<string> { "No AutoHotkey game found" };
+                    }
+
+                    // Afficher le fichier .ahk du nom du système si le .ahk du jeu n'existe pas
+                    string systemAhkFile = $"{systemName}.ahk";
+                    if (systemAhkFiles.Contains(systemAhkFile))
+                    {
+                        ahkFilesListBox.ItemsSource = new List<string> { systemAhkFile };
+                    }
+                    else
+                    {
+                        // Afficher "No AutoHotkey system found" si aucun fichier .ahk correspondant au système n'est trouvé
+                        ahkFilesListBox.ItemsSource = new List<string> { "No AutoHotkey system found" };
+                    }
+                }
+
+                // Charger les fichiers .ahk du dossier personnalisé
+                string customAhkFolderPath = Path.Combine(systemFolderPath, "ahk", ".serial-send", ".edit");
+                List<string> customAhkFiles = LoadCustomAhkFiles(customAhkFolderPath);
+                ahkFilesListBoxCustom.ItemsSource = customAhkFiles;
+
+                // Si aucun fichier .ahk n'a été trouvé pour le jeu, le système ou le dossier personnalisé, afficher "No AutoHotkey found"
+                if ((ahkFilesListBox.Items.Count == 0 && ahkFilesListBoxGame.Items.Count == 0 && ahkFilesListBoxCustom.Items.Count == 0) ||
+                    (ahkFilesListBox.Items.Count == 0 && ahkFilesListBoxGame.Items[0].ToString() == "No AutoHotkey game found") ||
+                    (ahkFilesListBoxCustom.Items.Count == 0))
+                {
+                    ahkFilesListBoxCustom.ItemsSource = new List<string> { "No AutoHotkey found" };
+                }
+
+                // Mettre à jour le TextBlock avec le nom du système sélectionné
+                selectedSystemTextBlock.Text = $"System : {systemName}";
+
+                // Charger le contenu du fichier system-config.prc et l'afficher dans le TextBox
+                string systemConfigPath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", "system-config.prc");
+
+                if (File.Exists(systemConfigPath))
+                {
+                    string configContent = File.ReadAllText(systemConfigPath);
+                    configTextBox.Text = configContent;
+                }
+                else
+                {
+                    // Indiquer que le fichier system-config.prc est absent
+                    configTextBox.Text = "The file system-config.prc is not found.";
+                }
+            }
+        }
+
+        private void AhkFilesListBoxCustom_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ahkFilesListBoxCustom.SelectedItem != null)
+            {
+                string selectedAhkFile = ahkFilesListBoxCustom.SelectedItem.ToString();
+                string systemName = selectedSystemTextBlock.Text.Substring(selectedSystemTextBlock.Text.IndexOf(':') + 2); // Récupérer le nom du système à partir du TextBlock
+
+                // Construction du chemin vers le dossier .edit\ahk\ du système
+                string customAhkFolderPath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", ".serial-send", ".edit");
+
+                // Construction du chemin complet du fichier .ahk dans le dossier du système
+                string filePath = Path.Combine(customAhkFolderPath, selectedAhkFile);
+
+                if (selectedAhkFile == "No AutoHotkey found")
+                {
+                    // Demander à l'utilisateur s'il souhaite copier les fichiers de modèle
+                    var result = MessageBox.Show("No AutoHotkey files found. Do you want to copy Start.ahk, End.ahk, and remap.ahk from the templates folder?", "Copy Templates", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        try
+                        {
+                            // Créer les dossiers nécessaires s'ils n'existent pas
+                            if (!Directory.Exists(customAhkFolderPath))
+                            {
+                                Directory.CreateDirectory(customAhkFolderPath);
+                            }
+
+                            string templatesFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ".templates");
+
+                            // Copier les fichiers de modèle
+                            string[] templateFiles = { "Start.ahk", "End.ahk", "remap.ahk" };
+                            foreach (string file in templateFiles)
+                            {
+                                string sourceFile = Path.Combine(templatesFolderPath, file);
+                                string destFile = Path.Combine(customAhkFolderPath, file);
+
+                                // Vérifier si le fichier de modèle existe avant de le copier
+                                if (File.Exists(sourceFile))
+                                {
+                                    File.Copy(sourceFile, destFile, true);
+                                }
+                                else
+                                {
+                                    MessageBox.Show($"Template file '{file}' not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                }
+                            }
+
+                            // Recharger la liste des fichiers AHK personnalisés après la copie des fichiers
+                            List<string> customAhkFiles = LoadCustomAhkFiles(customAhkFolderPath);
+                            ahkFilesListBoxCustom.ItemsSource = customAhkFiles;
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                }
+                else
+                {
+                    if (File.Exists(filePath))
+                    {
+                        var editAhkWindow = new EditAhk();
+                        editAhkWindow.LoadFile(filePath);
+                        editAhkWindow.ShowDialog();
+                    }
+                    else
+                    {
+                        // Si le fichier n'existe pas, afficher un message d'erreur
+                        MessageBox.Show("The selected AutoHotkey file was not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+
+                // Réinitialiser la sélection de la ListBox
+                ahkFilesListBoxCustom.SelectedItem = null;
+            }
+        }
+
+
+
+
+        private List<string> LoadAhkFiles(string folderPath)
+        {
+            List<string> ahkFiles = new List<string>();
+
+            try
+            {
+                // Assurez-vous que les dossiers nécessaires existent ou créez-les s'ils sont absents
+                string ahkEditFolderPath = Path.Combine(folderPath, "ahk", ".edit");
+                if (!Directory.Exists(ahkEditFolderPath))
+                {
+                    Directory.CreateDirectory(ahkEditFolderPath);
+                }
+
+                // Recherchez les fichiers .ahk dans le dossier spécifié
+                string[] files = Directory.GetFiles(ahkEditFolderPath, "*.ahk");
+                foreach (string file in files)
+                {
+                    ahkFiles.Add(Path.GetFileName(file));
+                }
+            }
+            catch (Exception ex)
+            {
+                // Gérez l'exception ici (par exemple, en affichant un message d'erreur)
+                Console.WriteLine($"An error occurred while loading .ahk files : {ex.Message}");
+            }
+
+            return ahkFiles;
+        }
+
+
+
+        private void CreateAhkFile(string selectedItem)
+        {
+            if (romsDataGrid.SelectedItem != null)
+            {
+                string[] selectedGame = romsDataGrid.SelectedItem as string[];
+                string systemName = selectedGame[0];
+                string gameName = selectedGame[2]; // Récupérer le nom du jeu sélectionné
+
+                // Construction du chemin complet du dossier du système
+                string systemFolderPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), systemName);
+                string ahkEditFolderPath = System.IO.Path.Combine(systemFolderPath, "ahk", ".edit");
+
+                // Demander à l'utilisateur de choisir le template
+                var selectTypeDialog = new SelectTypeDialog();
+                selectTypeDialog.Initialize(gameName); // Utiliser le nom du jeu comme valeur par défaut
+                if (selectTypeDialog.ShowDialog() == true)
+                {
+                    string newFileName = selectTypeDialog.SelectedName;
+
+                    // Si l'utilisateur a sélectionné "System", utiliser le nom du système
+                    if (selectTypeDialog.SelectedType == "System")
+                    {
+                        newFileName = systemName;
+                    }
+
+                    // Construction du chemin complet de la template
+                    string templateFileName = selectTypeDialog.SelectedType == "Game" ? "game.ahk" : "system.ahk";
+                    string templatePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), ".templates", templateFileName);
+
+                    // Vérifie si l'utilisateur a sélectionné un template valide
+                    if (System.IO.File.Exists(templatePath))
+                    {
+                        try
+                        {
+                            // Lecture du contenu de la template
+                            string templateContent = System.IO.File.ReadAllText(templatePath);
+
+                            // Construction du chemin complet du nouveau fichier .ahk
+                            string newAhkFilePath = System.IO.Path.Combine(ahkEditFolderPath, newFileName + ".ahk");
+
+                            // Création du nouveau fichier .ahk en utilisant le contenu de la template
+                            System.IO.File.WriteAllText(newAhkFilePath, templateContent);
+
+                            // Ouvrir le fichier nouvellement créé dans EditAhk
+                            var editAhkWindow = new EditAhk();
+                            editAhkWindow.LoadFile(newAhkFilePath);
+                            editAhkWindow.ShowDialog();
+                        }
+                        catch (System.Exception ex)
+                        {
+                            MessageBox.Show($"An error occurred while creating the AutoHotkey file : {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Selected template file not found.");
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please select a game to create an AutoHotkey file.");
+            }
+        }
+
+        private List<string> LoadCustomAhkFiles(string folderPath)
+        {
+            List<string> ahkFiles = new List<string>();
+
+            try
+            {
+                // Recherchez les fichiers .ahk dans le dossier spécifié
+                string[] files = Directory.GetFiles(folderPath, "*.ahk");
+                foreach (string file in files)
+                {
+                    ahkFiles.Add(Path.GetFileName(file));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred while loading .ahk files: {ex.Message}");
+            }
+
+            return ahkFiles;
+        }
+
+
+        private void AhkFilesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ahkFilesListBox.SelectedItem != null)
+            {
+                string selectedAhkFile = ahkFilesListBox.SelectedItem.ToString();
+                string systemName = selectedSystemTextBlock.Text.Substring(selectedSystemTextBlock.Text.IndexOf(':') + 2); // Récupérer le nom du système à partir du TextBlock
+
+                // Construction du chemin vers le dossier .edit\ahk\ du système
+                string systemAhkFolderPath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", ".edit");
+
+                // Construction du chemin complet du fichier .ahk dans le dossier du système
+                string filePath = Path.Combine(systemAhkFolderPath, selectedAhkFile);
+
+                if (File.Exists(filePath))
+                {
+                    var editAhkWindow = new EditAhk();
+                    editAhkWindow.LoadFile(filePath);
+                    editAhkWindow.ShowDialog();
+                }
+                else
+                {
+                    // Si le fichier n'existe pas, vérifiez s'il s'agit de "No AutoHotkey system found"
+                    if (selectedAhkFile == "No AutoHotkey system found")
+                    {
+                        // Demander à l'utilisateur s'il souhaite créer un fichier .ahk
+                        CreateAhkFile(selectedAhkFile);
+                    }
+                    else
+                    {
+                        MessageBox.Show("The selected AutoHotkey file was not found.");
+                    }
+                }
+
+                // Réinitialiser la sélection de la ListBox
+                ahkFilesListBox.SelectedItem = null;
+            }
+        }
+
+        private void AhkFilesListBoxGame_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ahkFilesListBoxGame.SelectedItem != null)
+            {
+                string selectedAhkFile = ahkFilesListBoxGame.SelectedItem.ToString();
+                string systemName = selectedSystemTextBlock.Text.Substring(selectedSystemTextBlock.Text.IndexOf(':') + 2); // Récupérer le nom du système à partir du TextBlock
+
+                // Construction du chemin vers le dossier .edit\ahk\ du système
+                string systemAhkFolderPath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", ".edit");
+
+                // Construction du chemin complet du fichier .ahk dans le dossier du système
+                string filePath = Path.Combine(systemAhkFolderPath, selectedAhkFile);
+
+                if (File.Exists(filePath))
+                {
+                    var editAhkWindow = new EditAhk();
+                    editAhkWindow.LoadFile(filePath);
+                    editAhkWindow.ShowDialog();
+                }
+                else
+                {
+                    // Si le fichier n'existe pas, vérifiez s'il s'agit de "No AutoHotkey game found"
+                    if (selectedAhkFile == "No AutoHotkey game found")
+                    {
+                        // Demander à l'utilisateur s'il souhaite créer un fichier .ahk
+                        CreateAhkFile(selectedAhkFile);
+                    }
+                    else
+                    {
+                        MessageBox.Show("The selected AutoHotkey file was not found.");
+                    }
+                }
+
+                // Réinitialiser la sélection de la ListBox
+                ahkFilesListBoxGame.SelectedItem = null;
+            }
+        }
+
+        // Créer un DispatcherTimer
+        DispatcherTimer timer = new DispatcherTimer();
+        private void CompileAhk(string systemName, string fileName)
+        {
+            string ahkFolderPath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk");
+            string editFolderPath = Path.Combine(ahkFolderPath, ".edit");
+
+            string ahkFilePath = Path.Combine(editFolderPath, fileName);
+            string exeFilePath = Path.Combine(ahkFolderPath, $"{fileName.Replace(".ahk", ".exe")}");
+
+            if (File.Exists(ahkFilePath))
+            {
+                try
+                {
+                    string ahk2ExeFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ".Ahk2Exe");
+
+                    string command = $"\"{Path.Combine(ahk2ExeFolderPath, "Ahk2Exe.exe")}\" /in \"{ahkFilePath}\" /out \"{exeFilePath}\" /compress 1 /base \"{Path.Combine(ahk2ExeFolderPath, "Unicode 64-bit.bin")}\" ";
+
+                    // Créer un fichier batch avec la commande de compilation
+                    string batchFilePath = Path.Combine(ahk2ExeFolderPath, "compile.bat");
+                    File.WriteAllText(batchFilePath, command);
+
+                    ProcessStartInfo psi = new ProcessStartInfo("cmd.exe", $"/c {batchFilePath}")
+                    {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                    Process process = Process.Start(psi);
+                    process.WaitForExit();
+
+                    // Imprimer les erreurs éventuelles
+                    string stderr = process.StandardError.ReadToEnd();
+                    if (!string.IsNullOrEmpty(stderr))
+                    {
+                        Debug.WriteLine($"Compilation Errors: {stderr}");
+                    }
+
+                    //MessageBox.Show($"successful saved : {fileName}");
+                    // Ajouter le nouveau message à la fin du texte existant
+                    confirmationTextBlock.Text += $"successful saved :\n{Path.GetFileName(exeFilePath)}\n";
+
+                    // Démarrer le timer après avoir affiché le message de confirmation
+                    timer.Interval = TimeSpan.FromSeconds(5);
+                    timer.Tick += Timer_Tick;
+                    timer.Start();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error compiling AutoHotkey file: {ex.Message}");
+                }
+            }
+            else
+            {
+                MessageBox.Show("AutoHotkey file not found.");
+            }
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            // Effacer le message de confirmation et arrêter le timer
+            confirmationTextBlock.Text = "";
+            timer.Stop();
+        }
+
+        // Gestionnaire d'événements pour le clic sur le bouton de compilation
+        private void CompileAhkButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (romsDataGrid.SelectedItem != null)
+            {
+                string[] selectedGame = romsDataGrid.SelectedItem as string[];
+                string systemName = selectedGame[0];
+                string gameName = selectedGame[2]; // Récupérer le nom du jeu sélectionné
+
+                // Compilez le fichier .ahk correspondant au jeu sélectionné
+                CompileAhk(systemName, $"{gameName}.ahk");
+                CompileAhk(systemName, $"{systemName}.ahk");
+            }
+            else
+            {
+                MessageBox.Show("Please select a game to compile an AutoHotkey file.");
+            }
+        }
+
+        private void DeleteCompiledAhk(string systemName)
+        {
+            // Utiliser le même chemin relatif pour le dossier contenant vos fichiers .exe
+            string ahkFolderPath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk");
+
+            // Obtenir tous les fichiers .exe dans le dossier
+            string[] filePaths = Directory.GetFiles(ahkFolderPath, "*.exe");
+
+            foreach (string filePath in filePaths)
+            {
+                try
+                {
+                    File.Delete(filePath);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error deleting file: {ex.Message}");
+                }
+            }
+
+            // Ajouter le nouveau message à la fin du texte existant
+            confirmationTextBlock.Text += "Files deleted successfully.\n";
+
+            // Démarrer le timer après avoir affiché le message de confirmation
+            timer.Interval = TimeSpan.FromSeconds(3);
+            timer.Tick += Timer_Tick;
+            timer.Start();
+        }
+
+        private void DeleteCompiledAhkButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (romsDataGrid.SelectedItem != null)
+            {
+                string[] selectedGame = romsDataGrid.SelectedItem as string[];
+                string systemName = selectedGame[0]; // Récupérer le nom du système sélectionné
+
+                // Supprimez tous les fichiers .exe compilés pour le système sélectionné
+                DeleteCompiledAhk(systemName);
+            }
+            else
+            {
+                MessageBox.Show("Please select a system to delete compiled AutoHotkey files.");
+            }
+        }
+
+        private void SaveConfigButton_Click(object sender, RoutedEventArgs e)
+        {
+             string systemName = selectedSystemTextBlock.Text.Substring(selectedSystemTextBlock.Text.IndexOf(':') + 2); // Récupérer le nom du système à partir du TextBlock
+            // Récupérer le chemin complet du fichier system-config.prc
+            string systemConfigPath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", "system-config.prc");
+
+            try
+            {
+                // Écrire le contenu modifié dans le fichier system-config.prc
+                File.WriteAllText(systemConfigPath, configTextBox.Text);
+                MessageBox.Show("The changes were saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while saving changes: {ex.Message}");
+            }
+        }
+
+        private void CompileCustomAhkFiles(string systemName)
+        {
+            // Construction du chemin complet du dossier des fichiers AHK personnalisés
+            string customAhkFolderPath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", ".serial-send", ".edit");
+
+            // Assurez-vous que le dossier existe
+            if (!Directory.Exists(customAhkFolderPath))
+            {
+                MessageBox.Show("No custom AHK files found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Obtenir la liste des fichiers AHK personnalisés
+            List<string> customAhkFiles = LoadCustomAhkFiles(customAhkFolderPath);
+
+            // Compiler chaque fichier AHK
+            foreach (string file in customAhkFiles)
+            {
+                string ahkFilePath = Path.Combine(customAhkFolderPath, file);
+                string exeFilePath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", ".serial-send", $"{file.Replace(".ahk", ".exe")}");
+
+                // Compiler le fichier AHK
+                CompileAhkFile(ahkFilePath, exeFilePath);
+            }
+        }
+
+        private void CompileAhkFile(string ahkFilePath, string exeFilePath)
+        {
+            if (File.Exists(ahkFilePath))
+            {
+                try
+                {
+                    string ahk2ExeFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ".Ahk2Exe");
+
+                    string command = $"\"{Path.Combine(ahk2ExeFolderPath, "Ahk2Exe.exe")}\" /in \"{ahkFilePath}\" /out \"{exeFilePath}\" /compress 1 /base \"{Path.Combine(ahk2ExeFolderPath, "Unicode 64-bit.bin")}\" ";
+
+                    // Créer un fichier batch avec la commande de compilation
+                    string batchFilePath = Path.Combine(ahk2ExeFolderPath, "compile.bat");
+                    File.WriteAllText(batchFilePath, command);
+
+                    ProcessStartInfo psi = new ProcessStartInfo("cmd.exe", $"/c {batchFilePath}")
+                    {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                    Process process = Process.Start(psi);
+                    process.WaitForExit();
+
+                    // Imprimer les erreurs éventuelles
+                    string stderr = process.StandardError.ReadToEnd();
+                    if (!string.IsNullOrEmpty(stderr))
+                    {
+                        Debug.WriteLine($"Compilation Errors: {stderr}");
+                    }
+
+                    // Ajouter le nouveau message à la fin du texte existant
+                    confirmationTextBlock.Text += $"successful saved :{Path.GetFileName(exeFilePath)}\n";
+
+                    // Démarrer le timer après avoir affiché le message de confirmation
+                    timer.Interval = TimeSpan.FromSeconds(5);
+                    timer.Tick += Timer_Tick;
+                    timer.Start();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error compiling AutoHotkey file: {ex.Message}");
+                }
+            }
+            else
+            {
+                MessageBox.Show("AutoHotkey file not found.");
+            }
+        }
+
+        // Gestionnaire d'événements pour le clic sur le bouton de compilation personnalisé
+        private void CompileCustomAhkButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (romsDataGrid.SelectedItem != null)
+            {
+                string[] selectedGame = romsDataGrid.SelectedItem as string[];
+                string systemName = selectedGame[0];
+
+                // Compiler les fichiers AHK personnalisés
+                CompileCustomAhkFiles(systemName);
+            }
+            else
+            {
+                MessageBox.Show("Please select a system to compile the custom AutoHotkey files.");
+            }
+        }
+
 
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
