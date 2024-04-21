@@ -16,12 +16,16 @@ namespace WpfApp1
             private readonly Dictionary<string, List<string[]>> systems = new Dictionary<string, List<string[]>>();
             private readonly Dictionary<string, int> systemCounters = new Dictionary<string, int>();
             private readonly Dictionary<string, Dictionary<string, int>> categoryCounters = new Dictionary<string, Dictionary<string, int>>();
+            private bool isStartupEnabled = false;
 
         public MainWindow()
         {
             InitializeComponent();
 
             UpdateToggleButtonState();
+
+            // Vérifier si le raccourci est déjà présent au démarrage
+            CheckStartupShortcut();
 
             // Trouver le fichier roms.ini
             string romsIniPath = FindRomsIniFile(Directory.GetCurrentDirectory());
@@ -400,7 +404,6 @@ namespace WpfApp1
                 File.WriteAllLines(romsIniPath, romsIniLines);
             }
         }
-
         /// <summary>
         /// zone fin delete
         /// </summary>
@@ -550,6 +553,111 @@ namespace WpfApp1
             File.WriteAllLines(configFile, lines);
         }
 
+        private void RegisterOCXFilesButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Chemin du dossier contenant les fichiers OCX
+            string ocxFolderPath = Path.Combine(Directory.GetCurrentDirectory(), ".mamehooker");
+
+            // Chemin complet des fichiers OCX
+            string ledwizOcxPath = Path.Combine(ocxFolderPath, "LEDWIZM.OCX");
+            string richtxOcxPath = Path.Combine(ocxFolderPath, "richtx32.ocx");
+
+            // Vérifier si les fichiers OCX existent
+            if (!File.Exists(ledwizOcxPath) || !File.Exists(richtxOcxPath))
+            {
+                MessageBox.Show("One or both OCX files not found in the specified folder.");
+                return;
+            }
+
+            // Créer la commande regsvr32.exe
+            string regsvr32Command = $"/c regsvr32.exe \"{ledwizOcxPath}\" && regsvr32.exe \"{richtxOcxPath}\"";
+
+            // Lancer un processus CMD avec les privilèges d'administrateur
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = regsvr32Command,
+                Verb = "runas", // Exécuter en tant qu'administrateur
+                UseShellExecute = true
+            };
+
+            try
+            {
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error registering OCX files: {ex.Message}");
+            }
+        }
+
+        private void ToggleButton_Checked(object sender, RoutedEventArgs e)
+        {
+            AddToStartup();
+            isStartupEnabled = true;
+            toggleStartupButton.Content = "On";
+        }
+
+        private void ToggleButton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            RemoveFromStartup();
+            isStartupEnabled = false;
+            toggleStartupButton.Content = "Off";
+        }
+
+        private void CheckStartupShortcut()
+        {
+            // Chemin complet vers le raccourci dans le dossier de démarrage
+            string shortcutPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "Mamehook.lnk");
+
+            // Mettre à jour l'état du bouton en fonction de la présence ou de l'absence du raccourci
+            if (File.Exists(shortcutPath))
+            {
+                isStartupEnabled = true;
+                toggleStartupButton.IsChecked = true;
+                toggleStartupButton.Content = "On";
+            }
+            else
+            {
+                isStartupEnabled = false;
+                toggleStartupButton.IsChecked = false;
+                toggleStartupButton.Content = "Off";
+            }
+        }
+
+        private void AddToStartup()
+        {
+            // Chemin complet vers le fichier exécutable mamehook.exe
+            string exePath = Path.Combine(Directory.GetCurrentDirectory(), ".mamehooker", "mamehook.exe");
+
+            // Chemin complet vers le dossier de démarrage
+            string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+
+            // Créer le raccourci dans le dossier de démarrage
+            string shortcutPath = Path.Combine(startupFolderPath, "Mamehook.lnk");
+
+            // Créer un objet WshShell pour manipuler les raccourcis
+            IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
+            IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(shortcutPath);
+
+            // Spécifier le chemin de l'exécutable dans le raccourci
+            shortcut.TargetPath = exePath;
+
+            // Enregistrer le raccourci
+            shortcut.Save();
+        }
+
+        private void RemoveFromStartup()
+        {
+            // Chemin complet vers le raccourci dans le dossier de démarrage
+            string shortcutPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "Mamehook.lnk");
+
+            // Supprimer le fichier du raccourci s'il existe
+            if (File.Exists(shortcutPath))
+            {
+                File.Delete(shortcutPath);
+            }
+        }
 
         private void RomsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
