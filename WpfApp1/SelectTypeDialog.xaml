@@ -9,9 +9,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-
         <TextBlock Text="Select Type:" Margin="10" VerticalAlignment="Center" />
-
         <ComboBox x:Name="typeComboBox" Grid.Row="0" Margin="100,10,10,10" VerticalAlignment="Center" SelectedIndex="0">
             <ComboBoxItem Content="Game" />
             <ComboBoxItem Content="System" />

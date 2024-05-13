@@ -21,9 +21,7 @@ namespace WpfApp1
         public MainWindow()
         {
             InitializeComponent();
-
             UpdateToggleButtonState();
-
             // Vérifier si le raccourci est déjà présent au démarrage
             CheckStartupShortcut();
 
@@ -280,7 +278,6 @@ namespace WpfApp1
 /// <summary>
 /// zone debut delete
 /// </summary>
-
         private void RemoveEmptySystems()
         {
             // Récupérer les systèmes sans catégorie
@@ -407,7 +404,6 @@ namespace WpfApp1
         /// <summary>
         /// zone fin delete
         /// </summary>
-
         private void SaveData()
         {
             string romsIniPath = FindRomsIniFile(Directory.GetCurrentDirectory());
@@ -724,7 +720,7 @@ namespace WpfApp1
                 // Mettre à jour le TextBlock avec le nom du système sélectionné
                 selectedSystemTextBlock.Text = $"System : {systemName}";
 
-                // Charger le contenu du fichier system-config.prc et l'afficher dans le TextBox
+                // Charger le contenu du fichier system-config.prc pour ahk et l'afficher dans le TextBox
                 string systemConfigPath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", "system-config.prc");
 
                 if (File.Exists(systemConfigPath))
@@ -737,6 +733,26 @@ namespace WpfApp1
                     // Indiquer que le fichier system-config.prc est absent
                     configTextBox.Text = "The file system-config.prc is not found.";
                 }
+
+                // Mettre à jour le TextBlock avec le nom du système sélectionné
+                selectedSystemTextBlock.Text = $"System : {systemName}";
+
+                // Charger le contenu du fichier system-config.prc pour nomousy et l'afficher dans le TextBox
+                string systemConfigNomousyPath = Path.Combine(Directory.GetCurrentDirectory(), ".nomousy", "system-config.prc");
+
+                if (File.Exists(systemConfigNomousyPath))
+                {
+                    string configContent = File.ReadAllText(systemConfigNomousyPath);
+                    configTextNomousyBox.Text = configContent;
+                }
+                else
+                {
+                    // Indiquer que le fichier system-config.prc est absent
+                    configTextNomousyBox.Text = "The file system-config.prc is not found.";
+                }
+
+
+
             }
         }
 
@@ -818,9 +834,6 @@ namespace WpfApp1
             }
         }
 
-
-
-
         private List<string> LoadAhkFiles(string folderPath)
         {
             List<string> ahkFiles = new List<string>();
@@ -849,8 +862,6 @@ namespace WpfApp1
 
             return ahkFiles;
         }
-
-
 
         private void CreateAhkFile(string selectedItem)
         {
@@ -937,7 +948,6 @@ namespace WpfApp1
 
             return ahkFiles;
         }
-
 
         private void AhkFilesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -1164,6 +1174,24 @@ namespace WpfApp1
             }
         }
 
+        private void SaveConfigNomousyButton_Click(object sender, RoutedEventArgs e)
+        {
+            string systemName = selectedSystemTextBlock.Text.Substring(selectedSystemTextBlock.Text.IndexOf(':') + 2); // Récupérer le nom du système à partir du TextBlock
+            // Récupérer le chemin complet du fichier system-config.prc nomousy
+            string systemConfigNomousyPath = Path.Combine(Directory.GetCurrentDirectory(), ".nomousy", "system-config.prc");
+
+            try
+            {
+                // Écrire le contenu modifié dans le fichier system-config.prc
+                File.WriteAllText(systemConfigNomousyPath, configTextNomousyBox.Text);
+                MessageBox.Show("The changes were saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while saving changes: {ex.Message}");
+            }
+        }
+
         private void CompileCustomAhkFiles(string systemName)
         {
             // Construction du chemin complet du dossier des fichiers AHK personnalisés
@@ -1257,8 +1285,6 @@ namespace WpfApp1
                 MessageBox.Show("Please select a system to compile the custom AutoHotkey files.");
             }
         }
-
-
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
