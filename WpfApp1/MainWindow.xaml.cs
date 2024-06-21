@@ -677,7 +677,7 @@ namespace WpfApp1
                 if (!string.IsNullOrEmpty(gameName))
                 {
                     // Construire le chemin du fichier .ahk correspondant au jeu sélectionné
-                    string gameAhkFile = $"{gameName}.ahk"; // Nom du fichier .ahk
+                    string gameAhkFile = $"{gameName}_ahk.ahk"; // Nom du fichier .ahk
 
                     // Vérifier si le fichier .ahk du jeu existe dans le dossier du système
                     if (systemAhkFiles.Contains(gameAhkFile))
@@ -692,7 +692,7 @@ namespace WpfApp1
                     }
 
                     // Afficher le fichier .ahk du nom du système si le .ahk du jeu n'existe pas
-                    string systemAhkFile = $"{systemName}.ahk";
+                    string systemAhkFile = $"{systemName}_ahk.ahk";
                     if (systemAhkFiles.Contains(systemAhkFile))
                     {
                         ahkFilesListBox.ItemsSource = new List<string> { systemAhkFile };
@@ -848,7 +848,7 @@ namespace WpfApp1
                 }
 
                 // Recherchez les fichiers .ahk dans le dossier spécifié
-                string[] files = Directory.GetFiles(ahkEditFolderPath, "*.ahk");
+                string[] files = Directory.GetFiles(ahkEditFolderPath, "*_ahk.ahk");
                 foreach (string file in files)
                 {
                     ahkFiles.Add(Path.GetFileName(file));
@@ -901,7 +901,7 @@ namespace WpfApp1
                             string templateContent = System.IO.File.ReadAllText(templatePath);
 
                             // Construction du chemin complet du nouveau fichier .ahk
-                            string newAhkFilePath = System.IO.Path.Combine(ahkEditFolderPath, newFileName + ".ahk");
+                            string newAhkFilePath = System.IO.Path.Combine(ahkEditFolderPath, newFileName + "_ahk.ahk");
 
                             // Création du nouveau fichier .ahk en utilisant le contenu de la template
                             System.IO.File.WriteAllText(newAhkFilePath, templateContent);
@@ -1033,7 +1033,7 @@ namespace WpfApp1
             string editFolderPath = Path.Combine(ahkFolderPath, ".edit");
 
             string ahkFilePath = Path.Combine(editFolderPath, fileName);
-            string exeFilePath = Path.Combine(ahkFolderPath, $"{fileName.Replace(".ahk", ".exe")}");
+            string exeFilePath = Path.Combine(ahkFolderPath, $"{fileName.Replace("_ahk.ahk", "_ahk.exe")}");
 
             if (File.Exists(ahkFilePath))
             {
@@ -1102,8 +1102,8 @@ namespace WpfApp1
                 string gameName = selectedGame[2]; // Récupérer le nom du jeu sélectionné
 
                 // Compilez le fichier .ahk correspondant au jeu sélectionné
-                CompileAhk(systemName, $"{gameName}.ahk");
-                CompileAhk(systemName, $"{systemName}.ahk");
+                CompileAhk(systemName, $"{gameName}_ahk.ahk");
+                CompileAhk(systemName, $"{systemName}_ahk.ahk");
             }
             else
             {
@@ -1211,7 +1211,7 @@ namespace WpfApp1
             foreach (string file in customAhkFiles)
             {
                 string ahkFilePath = Path.Combine(customAhkFolderPath, file);
-                string exeFilePath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", ".serial-send", $"{file.Replace(".ahk", ".exe")}");
+                string exeFilePath = Path.Combine(Directory.GetCurrentDirectory(), systemName, "ahk", ".serial-send", $"{file.Replace("_ahk.ahk", "_ahk.exe")}");
 
                 // Compiler le fichier AHK
                 CompileAhkFile(ahkFilePath, exeFilePath);
