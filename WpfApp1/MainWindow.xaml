@@ -72,7 +72,7 @@
                 <Button Content="Delete all Compiled AHK" Click="DeleteCompiledAhkButton_Click" HorizontalAlignment="Center" Width="auto" Height="30" Margin="0,7,0,0"/>
                 <!-- TextBox pour afficher le contenu modifiable -->
                 <TextBlock Text="Search .exe in Tasklist" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,13,0,0"/>
-                <TextBox x:Name="configTextBox" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Height="Auto" Margin="0,0,0,10"/>
+                <TextBox x:Name="configTextBox" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="50" Margin="0,0,0,10"/>
                 <!-- Bouton Save -->
                 <Button Content="Save" Click="SaveConfigButton_Click" HorizontalAlignment="Center" Width="80" Height="30"/>
                 <TextBlock Text="Autohotkey edit start/remap/end" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,15,0,0"/>
@@ -87,7 +87,7 @@
                     <Button Content="Compile Custom AHK" Click="CompileCustomAhkButton_Click" HorizontalAlignment="Center" Width="auto" Height="30" Margin="0,-8,0,0"/>
                 </StackPanel>
                 <TextBlock Text="Search .exe in Tasklist for nomousy" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,13,0,0"/>
-                <TextBox x:Name="configTextNomousyBox" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Height="Auto" Margin="0,0,0,10"/>
+                <TextBox x:Name="configTextNomousyBox" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Height="50" Margin="0,0,0,10"/>
                 <Button Content="Save" Click="SaveConfigNomousyButton_Click" HorizontalAlignment="Center" Width="80" Height="30"/>
                 <TextBlock x:Name="confirmationTextBlock" HorizontalAlignment="Center" FontWeight="Bold" Height="auto" Margin="0,100,0,0"/>
             </StackPanel>
