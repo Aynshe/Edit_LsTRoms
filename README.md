@@ -2,9 +2,9 @@
 
 ![image](https://github.com/user-attachments/assets/53aa39a9-3828-4f9b-acd1-154f027b9047)
 
-# Edit_LsTRoms
+# Edit_LsTRoms For RetroBat
 
-A Windows application designed to manage and edit ROM configurations for DemulShooter, providing an intuitive interface for light gun game setup and automation.
+A Windows application designed to manage and edit ROM configurations for DemulShooter in RetroBat, providing an interface for light gun game setup and automation.
 
 ## Features
 
