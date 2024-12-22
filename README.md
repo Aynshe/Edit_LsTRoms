@@ -2,6 +2,8 @@
 
 ![image](https://github.com/user-attachments/assets/53aa39a9-3828-4f9b-acd1-154f027b9047)
 
+Donwload first pack : https://archive.org/details/retrobat-script-demulshooter-packes-custom-nixx.-7z
+
 # Edit_LsTRoms For RetroBat
 
 A Windows application designed to manage and edit ROM configurations for DemulShooter in RetroBat, providing an interface for light gun game setup and automation.
