@@ -63,14 +63,6 @@ A Windows application designed to manage and edit ROM configurations for DemulSh
    - Click the update button when available to install new versions
    - View changelogs before updating
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit pull requests.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## Acknowledgments
 
 - DemulShooter by [argonlefou](https://github.com/argonlefou/DemulShooter)
