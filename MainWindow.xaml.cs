@@ -18,10 +18,10 @@ namespace Edit_LsTRoms
     [SupportedOSPlatform("windows")]
     public partial class MainWindow : Window
     {
-        private const string APP_VERSION = "1.2.0";
-        private readonly Dictionary<string, List<string[]>> systems = new Dictionary<string, List<string[]>>();
-        private readonly Dictionary<string, int> systemCounters = new Dictionary<string, int>();
-        private readonly Dictionary<string, Dictionary<string, int>> categoryCounters = new Dictionary<string, Dictionary<string, int>>();
+        private const string APP_VERSION = "1.2.1";
+            private readonly Dictionary<string, List<string[]>> systems = new Dictionary<string, List<string[]>>();
+            private readonly Dictionary<string, int> systemCounters = new Dictionary<string, int>();
+            private readonly Dictionary<string, Dictionary<string, int>> categoryCounters = new Dictionary<string, Dictionary<string, int>>();
         private readonly HttpClient _httpClient = new HttpClient();
         private readonly DispatcherTimer timer = new DispatcherTimer();
         private string? _currentVersion;
@@ -37,8 +37,8 @@ namespace Edit_LsTRoms
             _httpClient.Timeout = TimeSpan.FromSeconds(10);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Edit_LsTRoms");
 
-            // Vérifier la version au démarrage
-            _ = CheckDemulShooterVersion();
+            // Vérifier les versions au démarrage avec des délais
+            _ = InitializeVersionChecks();
 
             // Trouver le fichier roms.ini
             string? romsIniPath = FindRomsIniFile(Directory.GetCurrentDirectory());
@@ -97,6 +97,27 @@ namespace Edit_LsTRoms
             }
 
             _ = CheckForUpdatesAsync();
+        }
+
+        private async Task InitializeVersionChecks()
+        {
+            try
+            {
+                // Vérifier DemulShooter en premier
+                await CheckDemulShooterVersion();
+                
+                // Attendre 2 secondes avant de vérifier Edit_LsTRoms
+                await Task.Delay(2000);
+                await CheckAppVersion();
+                
+                // Attendre 2 secondes avant de vérifier ScriptPush
+                await Task.Delay(2000);
+                await CheckScriptPushVersion();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Erreur lors des vérifications de version: {ex.Message}");
+            }
         }
 
         private async Task CheckForUpdatesAsync()
@@ -2013,9 +2034,9 @@ namespace Edit_LsTRoms
                     UpdateStatus.Text = "Up to date";
                     UpdateIndicator.Fill = Brushes.Green;
                     updateButton.IsEnabled = false;
-                }
-                else
-                {
+            }
+            else
+            {
                     Debug.WriteLine("Nouvelle version disponible - Activation de la mise à jour");
                     UpdateStatus.Text = "Update available!";
                     UpdateIndicator.Fill = Brushes.Red;
@@ -2033,10 +2054,612 @@ namespace Edit_LsTRoms
             }
         }
 
+        private async Task CheckAppVersion()
+        {
+            try
+            {
+                AppUpdateStatus.Text = "Checking...";
+                AppUpdateIndicator.Fill = Brushes.Gray;
+                appUpdateButton.IsEnabled = false;
+                AppCurrentVersionText.Text = $"Current: v{APP_VERSION}";
+                AppLatestVersionText.Text = "Latest: Checking...";
+
+                // Obtenir la dernière version depuis GitHub
+                var response = await _httpClient.GetStringAsync("https://api.github.com/repos/Aynshe/Edit_LsTRoms/releases/latest");
+                if (string.IsNullOrEmpty(response))
+                {
+                    Debug.WriteLine("Réponse GitHub invalide");
+                    AppUpdateStatus.Text = "Version check error";
+                    AppUpdateIndicator.Fill = Brushes.Gray;
+                    appUpdateButton.IsEnabled = true;
+                    AppLatestVersionText.Text = "Latest: Unknown";
+                    return;
+                }
+
+                // Extraire le numéro de version de la réponse
+                var versionMatch = System.Text.RegularExpressions.Regex.Match(response, @"Edit_LsTRoms_([\d\.]+)\.zip");
+                if (!versionMatch.Success)
+                {
+                    Debug.WriteLine("Format de version invalide dans la réponse");
+                    AppUpdateStatus.Text = "Version check error";
+                    AppUpdateIndicator.Fill = Brushes.Gray;
+                    appUpdateButton.IsEnabled = true;
+                    AppLatestVersionText.Text = "Latest: Unknown";
+                    return;
+                }
+
+                string latestVersion = versionMatch.Groups[1].Value;
+                Debug.WriteLine($"Dernière version trouvée: {latestVersion}");
+                AppLatestVersionText.Text = $"Latest: v{latestVersion}";
+
+                Version currentVer = Version.Parse(APP_VERSION);
+                Version latestVer = Version.Parse(latestVersion);
+
+                int comparison = currentVer.CompareTo(latestVer);
+                if (comparison >= 0)
+                {
+                    Debug.WriteLine("Version actuelle est à jour");
+                    AppUpdateStatus.Text = "Up to date";
+                    AppUpdateIndicator.Fill = Brushes.Green;
+                    appUpdateButton.IsEnabled = false;
+                }
+                else
+                {
+                    Debug.WriteLine("Nouvelle version disponible");
+                    AppUpdateStatus.Text = "Update available!";
+                    AppUpdateIndicator.Fill = Brushes.Red;
+                    appUpdateButton.IsEnabled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Erreur lors de la vérification de version: {ex.Message}");
+                AppUpdateStatus.Text = "Check failed";
+                AppUpdateIndicator.Fill = Brushes.Gray;
+                appUpdateButton.IsEnabled = true;
+                AppLatestVersionText.Text = "Latest: Unknown";
+            }
+        }
+
+        private async void AppUpdateButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                appUpdateButton.IsEnabled = false;
+                appDownloadProgressBar.Visibility = Visibility.Visible;
+
+                // Obtenir les informations de la dernière version
+                var response = await _httpClient.GetStringAsync("https://api.github.com/repos/Aynshe/Edit_LsTRoms/releases/latest");
+                if (string.IsNullOrEmpty(response))
+                {
+                    MessageBox.Show("Error retrieving latest version information.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    appUpdateButton.IsEnabled = true;
+                    appDownloadProgressBar.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                // Extraire les informations de version et changelog
+                var versionMatch = System.Text.RegularExpressions.Regex.Match(response, @"Edit_LsTRoms_([\d\.]+)\.zip");
+                if (!versionMatch.Success)
+                {
+                    MessageBox.Show("Invalid version format in response.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    appUpdateButton.IsEnabled = true;
+                    appDownloadProgressBar.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                string latestVersion = versionMatch.Groups[1].Value;
+                string[] changelogParts = response.Split("\"body\":\"");
+                if (changelogParts.Length < 2)
+                {
+                    MessageBox.Show("Invalid changelog format in response.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    appUpdateButton.IsEnabled = true;
+                    appDownloadProgressBar.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                string changelogContent = changelogParts[1].Split("\",\"")[0]
+                    .Replace("\\r\\n", Environment.NewLine)
+                    .Replace("\\n", Environment.NewLine);
+
+                // Créer et afficher la fenêtre de changelog
+                var changelogWindow = new Window
+                {
+                    Title = $"Edit_LsTRoms Update v{latestVersion}",
+                    Width = 600,
+                    Height = 400,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5E5E5"))
+                };
+
+                var grid = new Grid();
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                var scrollViewer = new ScrollViewer
+                {
+                    Margin = new Thickness(10),
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+                };
+
+                var textBlock = new TextBlock
+                {
+                    Text = $"Changelog for version {latestVersion}:\n\n{changelogContent}",
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(10),
+                    FontSize = 14
+                };
+
+                scrollViewer.Content = textBlock;
+                Grid.SetRow(scrollViewer, 0);
+
+                var buttonPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(10)
+                };
+
+                var confirmButton = new Button
+                {
+                    Content = "Update",
+                    Width = 100,
+                    Height = 30,
+                    Margin = new Thickness(5),
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#666666")),
+                    Foreground = Brushes.White
+                };
+
+                var cancelButton = new Button
+                {
+                    Content = "Cancel",
+                    Width = 100,
+                    Height = 30,
+                    Margin = new Thickness(5),
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#666666")),
+                    Foreground = Brushes.White
+                };
+
+                buttonPanel.Children.Add(confirmButton);
+                buttonPanel.Children.Add(cancelButton);
+                Grid.SetRow(buttonPanel, 1);
+
+                grid.Children.Add(scrollViewer);
+                grid.Children.Add(buttonPanel);
+                changelogWindow.Content = grid;
+
+                bool proceedWithUpdate = false;
+                confirmButton.Click += (s, args) =>
+                {
+                    proceedWithUpdate = true;
+                    changelogWindow.Close();
+                };
+                cancelButton.Click += (s, args) => changelogWindow.Close();
+
+                changelogWindow.ShowDialog();
+
+                if (!proceedWithUpdate)
+                {
+                    appUpdateButton.IsEnabled = true;
+                    appDownloadProgressBar.Visibility = Visibility.Collapsed;
+                    appDownloadProgressBar.Value = 0;
+                    return;
+                }
+
+                // Obtenir l'URL de téléchargement
+                string[] downloadUrlParts = response.Split("\"browser_download_url\":\"");
+                if (downloadUrlParts.Length < 2)
+                {
+                    throw new InvalidOperationException("Could not find download URL in response.");
+                }
+                string downloadUrl = downloadUrlParts[1].Split("\"")[0];
+
+                // Créer le dossier temporaire
+                string tempPath = Path.Combine(Path.GetTempPath(), "Edit_LsTRomsUpdate");
+                Directory.CreateDirectory(tempPath);
+                string zipPath = Path.Combine(tempPath, $"Edit_LsTRoms_{latestVersion}.zip");
+
+                // Télécharger le fichier avec progression
+                using (var client = new HttpClient())
+                {
+                    using var response2 = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                    response2.EnsureSuccessStatusCode();
+                    var totalBytes = response2.Content.Headers.ContentLength ?? -1L;
+                    
+                    using var stream = await response2.Content.ReadAsStreamAsync();
+                    using var fileStream = File.Create(zipPath);
+                    var buffer = new byte[8192];
+                    var totalBytesRead = 0L;
+                    int bytesRead;
+
+                    while ((bytesRead = await stream.ReadAsync(buffer)) > 0)
+                    {
+                        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+                        totalBytesRead += bytesRead;
+                        if (totalBytes > 0)
+                        {
+                            appDownloadProgressBar.Value = (double)totalBytesRead / totalBytes * 100;
+                        }
+                    }
+                }
+
+                // Extraire dans un dossier temporaire
+                string tempExtractPath = Path.Combine(tempPath, "extracted");
+                Directory.CreateDirectory(tempExtractPath);
+                System.IO.Compression.ZipFile.ExtractToDirectory(zipPath, tempExtractPath, true);
+
+                // Rechercher Edit_LsTRoms.exe dans les sous-dossiers
+                string[] exeFiles = Directory.GetFiles(tempExtractPath, "Edit_LsTRoms.exe", SearchOption.AllDirectories);
+                if (exeFiles.Length == 0)
+                {
+                    throw new FileNotFoundException("Edit_LsTRoms.exe not found in the downloaded archive.");
+                }
+
+                // Créer un script batch pour gérer la mise à jour après la fermeture
+                string batchContent = $@"@echo off
+:wait
+timeout /t 1 /nobreak >nul
+tasklist /fi ""imagename eq Edit_LsTRoms.exe"" 2>nul | find /i ""Edit_LsTRoms.exe"" >nul
+if errorlevel 1 (
+    move /y ""{exeFiles[0]}"" ""{AppDomain.CurrentDomain.BaseDirectory}\Edit_LsTRoms.exe""
+    rmdir /s /q ""{tempPath}""
+    start """" ""{AppDomain.CurrentDomain.BaseDirectory}\Edit_LsTRoms.exe""
+    del ""%~f0""
+    exit
+) else (
+    goto wait
+)";
+
+                string batchPath = Path.Combine(tempPath, "update.bat");
+                File.WriteAllText(batchPath, batchContent);
+
+                MessageBox.Show("Update downloaded successfully! The application will now restart to complete the update.", "Update Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Démarrer le script batch
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = batchPath,
+                    UseShellExecute = true,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+                Process.Start(psi);
+
+                // Fermer l'application
+                Application.Current.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during update: {ex.Message}", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                appDownloadProgressBar.Visibility = Visibility.Collapsed;
+                appDownloadProgressBar.Value = 0;
+                appUpdateButton.IsEnabled = true;
+            }
+        }
+
         private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
         {
             Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
             e.Handled = true;
+        }
+
+        private async Task CheckScriptPushVersion()
+        {
+            try
+            {
+                ScriptPushUpdateStatus.Text = "Checking...";
+                ScriptPushUpdateIndicator.Fill = Brushes.Gray;
+                scriptPushUpdateButton.IsEnabled = false;
+
+                // Lire la version actuelle de ScriptPush depuis son exécutable
+                string scriptPushPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ScriptPush.exe");
+                if (!File.Exists(scriptPushPath))
+                {
+                    Debug.WriteLine("ScriptPush.exe non trouvé");
+                    ScriptPushUpdateStatus.Text = "Version check error";
+                    ScriptPushUpdateIndicator.Fill = Brushes.Gray;
+                    scriptPushUpdateButton.IsEnabled = true;
+                    ScriptPushCurrentVersionText.Text = "Current: Unknown";
+                    ScriptPushLatestVersionText.Text = "Latest: Unknown";
+                    return;
+                }
+
+                // Obtenir la version depuis le fichier source
+                string currentVersion = "1.0.0"; // Version par défaut
+                try
+                {
+                    var versionInfo = FileVersionInfo.GetVersionInfo(scriptPushPath);
+                    if (!string.IsNullOrEmpty(versionInfo.FileVersion))
+                    {
+                        currentVersion = versionInfo.FileVersion;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Erreur lors de la lecture de la version: {ex.Message}");
+                }
+
+                ScriptPushCurrentVersionText.Text = $"Current: v{currentVersion}";
+
+                // Obtenir la dernière version depuis GitHub
+                var response = await _httpClient.GetStringAsync("https://api.github.com/repos/Aynshe/ScriptPush_RetroBat/releases/latest");
+                if (string.IsNullOrEmpty(response))
+                {
+                    Debug.WriteLine("Réponse GitHub invalide");
+                    ScriptPushUpdateStatus.Text = "Version check error";
+                    ScriptPushUpdateIndicator.Fill = Brushes.Gray;
+                    scriptPushUpdateButton.IsEnabled = true;
+                    ScriptPushLatestVersionText.Text = "Latest: Unknown";
+                    return;
+                }
+
+                // Utiliser le pattern exact pour la version GitHub
+                var versionMatch = System.Text.RegularExpressions.Regex.Match(response, @"ScriptPush_([\d\.]+)\.zip");
+                if (!versionMatch.Success)
+                {
+                    Debug.WriteLine("Format de version invalide dans la réponse");
+                    ScriptPushUpdateStatus.Text = "Version check error";
+                    ScriptPushUpdateIndicator.Fill = Brushes.Gray;
+                    scriptPushUpdateButton.IsEnabled = true;
+                    ScriptPushLatestVersionText.Text = "Latest: Unknown";
+                    return;
+                }
+
+                string latestVersion = versionMatch.Groups[1].Value;
+                Debug.WriteLine($"Dernière version trouvée: {latestVersion}");
+                ScriptPushLatestVersionText.Text = $"Latest: v{latestVersion}";
+
+                Version currentVer = Version.Parse(currentVersion);
+                Version latestVer = Version.Parse(latestVersion);
+
+                int comparison = currentVer.CompareTo(latestVer);
+                if (comparison >= 0)
+                {
+                    Debug.WriteLine("Version actuelle est à jour");
+                    ScriptPushUpdateStatus.Text = "Up to date";
+                    ScriptPushUpdateIndicator.Fill = Brushes.Green;
+                    scriptPushUpdateButton.IsEnabled = false;
+                }
+                else
+                {
+                    Debug.WriteLine("Nouvelle version disponible");
+                    ScriptPushUpdateStatus.Text = "Update available!";
+                    ScriptPushUpdateIndicator.Fill = Brushes.Red;
+                    scriptPushUpdateButton.IsEnabled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Erreur lors de la vérification de version: {ex.Message}");
+                ScriptPushUpdateStatus.Text = "Check failed";
+                ScriptPushUpdateIndicator.Fill = Brushes.Gray;
+                scriptPushUpdateButton.IsEnabled = true;
+                ScriptPushCurrentVersionText.Text = "Current: Unknown";
+                ScriptPushLatestVersionText.Text = "Latest: Unknown";
+            }
+        }
+
+        private async void ScriptPushUpdateButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                scriptPushUpdateButton.IsEnabled = false;
+                scriptPushDownloadProgressBar.Visibility = Visibility.Visible;
+
+                // Obtenir les informations de la dernière version
+                var response = await _httpClient.GetStringAsync("https://api.github.com/repos/Aynshe/ScriptPush_RetroBat/releases/latest");
+                if (string.IsNullOrEmpty(response))
+                {
+                    MessageBox.Show("Error retrieving latest version information.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    scriptPushUpdateButton.IsEnabled = true;
+                    scriptPushDownloadProgressBar.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                // Extraire les informations de version et changelog
+                var versionMatch = System.Text.RegularExpressions.Regex.Match(response, @"ScriptPush_([\d\.]+)\.zip");
+                if (!versionMatch.Success)
+                {
+                    MessageBox.Show("Invalid version format in response.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    scriptPushUpdateButton.IsEnabled = true;
+                    scriptPushDownloadProgressBar.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                string latestVersion = versionMatch.Groups[1].Value;
+                string[] changelogParts = response.Split("\"body\":\"");
+                if (changelogParts.Length < 2)
+                {
+                    MessageBox.Show("Invalid changelog format in response.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    scriptPushUpdateButton.IsEnabled = true;
+                    scriptPushDownloadProgressBar.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                string changelogContent = changelogParts[1].Split("\",\"")[0]
+                    .Replace("\\r\\n", Environment.NewLine)
+                    .Replace("\\n", Environment.NewLine);
+
+                // Créer et afficher la fenêtre de changelog
+                var changelogWindow = new Window
+                {
+                    Title = $"ScriptPush Update v{latestVersion}",
+                    Width = 600,
+                    Height = 400,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5E5E5"))
+                };
+
+                var grid = new Grid();
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                var scrollViewer = new ScrollViewer
+                {
+                    Margin = new Thickness(10),
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+                };
+
+                var textBlock = new TextBlock
+                {
+                    Text = $"Changelog for version {latestVersion}:\n\n{changelogContent}",
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(10),
+                    FontSize = 14
+                };
+
+                scrollViewer.Content = textBlock;
+                Grid.SetRow(scrollViewer, 0);
+
+                var buttonPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(10)
+                };
+
+                var confirmButton = new Button
+                {
+                    Content = "Update",
+                    Width = 100,
+                    Height = 30,
+                    Margin = new Thickness(5),
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#666666")),
+                    Foreground = Brushes.White
+                };
+
+                var cancelButton = new Button
+                {
+                    Content = "Cancel",
+                    Width = 100,
+                    Height = 30,
+                    Margin = new Thickness(5),
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#666666")),
+                    Foreground = Brushes.White
+                };
+
+                buttonPanel.Children.Add(confirmButton);
+                buttonPanel.Children.Add(cancelButton);
+                Grid.SetRow(buttonPanel, 1);
+
+                grid.Children.Add(scrollViewer);
+                grid.Children.Add(buttonPanel);
+                changelogWindow.Content = grid;
+
+                bool proceedWithUpdate = false;
+                confirmButton.Click += (s, args) =>
+                {
+                    proceedWithUpdate = true;
+                    changelogWindow.Close();
+                };
+                cancelButton.Click += (s, args) => changelogWindow.Close();
+
+                changelogWindow.ShowDialog();
+
+                if (!proceedWithUpdate)
+                {
+                    scriptPushUpdateButton.IsEnabled = true;
+                    scriptPushDownloadProgressBar.Visibility = Visibility.Collapsed;
+                    scriptPushDownloadProgressBar.Value = 0;
+                    return;
+                }
+
+                // Obtenir l'URL de téléchargement
+                string[] downloadUrlParts = response.Split("\"browser_download_url\":\"");
+                if (downloadUrlParts.Length < 2)
+                {
+                    throw new InvalidOperationException("Could not find download URL in response.");
+                }
+                string downloadUrl = downloadUrlParts[1].Split("\"")[0];
+
+                // Créer le dossier temporaire
+                string tempPath = Path.Combine(Path.GetTempPath(), "ScriptPushUpdate");
+                Directory.CreateDirectory(tempPath);
+                string zipPath = Path.Combine(tempPath, $"ScriptPush_{latestVersion}.zip");
+
+                // Télécharger le fichier avec progression
+                using (var client = new HttpClient())
+                {
+                    using var response2 = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                    response2.EnsureSuccessStatusCode();
+                    var totalBytes = response2.Content.Headers.ContentLength ?? -1L;
+                    
+                    using var stream = await response2.Content.ReadAsStreamAsync();
+                    using var fileStream = File.Create(zipPath);
+                    var buffer = new byte[8192];
+                    var totalBytesRead = 0L;
+                    int bytesRead;
+
+                    while ((bytesRead = await stream.ReadAsync(buffer)) > 0)
+                    {
+                        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+                        totalBytesRead += bytesRead;
+                        if (totalBytes > 0)
+                        {
+                            scriptPushDownloadProgressBar.Value = (double)totalBytesRead / totalBytes * 100;
+                        }
+                    }
+                }
+
+                // Extraire dans un dossier temporaire
+                string tempExtractPath = Path.Combine(tempPath, "extracted");
+                Directory.CreateDirectory(tempExtractPath);
+                System.IO.Compression.ZipFile.ExtractToDirectory(zipPath, tempExtractPath, true);
+
+                // Rechercher ScriptPush.exe dans les sous-dossiers
+                string[] exeFiles = Directory.GetFiles(tempExtractPath, "ScriptPush.exe", SearchOption.AllDirectories);
+                if (exeFiles.Length == 0)
+                {
+                    throw new FileNotFoundException("ScriptPush.exe not found in the downloaded archive.");
+                }
+
+                // Créer un script batch pour gérer la mise à jour
+                string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ScriptPush.exe");
+                string batchContent = $@"@echo off
+:wait
+timeout /t 1 /nobreak >nul
+tasklist /fi ""imagename eq ScriptPush.exe"" 2>nul | find /i ""ScriptPush.exe"" >nul
+if errorlevel 1 (
+    move /y ""{exeFiles[0]}"" ""{targetPath}""
+    rmdir /s /q ""{tempPath}""
+    del ""%~f0""
+    exit
+) else (
+    goto wait
+)";
+
+                string batchPath = Path.Combine(tempPath, "update.bat");
+                File.WriteAllText(batchPath, batchContent);
+
+                MessageBox.Show("Update downloaded successfully! ScriptPush will be updated when it's not running.", "Update Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Démarrer le script batch
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = batchPath,
+                    UseShellExecute = true,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+                Process.Start(psi);
+
+                scriptPushDownloadProgressBar.Visibility = Visibility.Collapsed;
+                scriptPushDownloadProgressBar.Value = 0;
+                scriptPushUpdateButton.IsEnabled = true;
+
+                // Attendre un peu pour s'assurer que le fichier est copié
+                await Task.Delay(2000);
+
+                // Vérifier à nouveau la version pour mettre à jour l'affichage
+                await CheckScriptPushVersion();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during update: {ex.Message}", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                scriptPushDownloadProgressBar.Visibility = Visibility.Collapsed;
+                scriptPushDownloadProgressBar.Value = 0;
+                scriptPushUpdateButton.IsEnabled = true;
+            }
         }
     }
 }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Edit_LsTRoms"
         mc:Ignorable="d"
-        Height="1000" Width="1500"
+        Height="1040" Width="1500"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <Style TargetType="Button">
@@ -44,53 +44,69 @@
     </Window.Resources>
     <Grid Margin="10">
         <DockPanel Background="#E5E5E5">
-            <StackPanel DockPanel.Dock="Left" Width="230" Orientation="Vertical" Margin="10" Background="#E5E5E5">
-                <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="0,0,0,20" Padding="10" Background="White">
+            <StackPanel DockPanel.Dock="Left" Width="230" Orientation="Vertical" Margin="5" Background="#E5E5E5">
+                <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="2,2,2,2" Padding="10" Background="White">
                     <StackPanel>
                         <Button Name="saveButton" Content="Save" Height="30" Click="SaveButton_Click" />
                         <Button Name="addGameButton" Content="Add Game" Height="30" Margin="0,10,0,0" Click="AddGameButton_Click" />
-                        <TextBlock Text="search..." Foreground="Gray" FontStyle="Italic" Margin="0,5,0,0" HorizontalAlignment="Center" />
+            <TextBlock Text="search..." Foreground="Gray" FontStyle="Italic" Margin="0,5,0,0" HorizontalAlignment="Center" />
                         <TextBox Name="searchBox" Height="30" Margin="0,10,0,0" TextChanged="SearchBox_TextChanged" />
-                        <CheckBox Name="toggleSelectionUnit" Content="Batch text editing" Checked="ToggleSelectionUnit_Checked" Unchecked="ToggleSelectionUnit_Unchecked" Margin="28,10,0,0" />
+            <CheckBox Name="toggleSelectionUnit" Content="Batch text editing" Checked="ToggleSelectionUnit_Checked" Unchecked="ToggleSelectionUnit_Unchecked" Margin="28,10,0,0" />
                         <TextBox Name="editBox" Height="30" Margin="0,10,0,0" Foreground="Gray" Text="Text..." GotFocus="EditBox_GotFocus" LostFocus="EditBox_LostFocus"/>
                         <Button Name="applyButton" Content="Apply" Height="30" Click="ApplyButton_Click" />
                         <Button Name="deleteGamesButton" Content="Delete selected games" Margin="0,10,0,0" Height="30" Click="DeleteGamesButton_Click" />
                     </StackPanel>
                 </Border>
 
-                <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="0,0,0,20" Padding="10" Background="White">
+                <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="2,2,2,2" Padding="10" Background="White">
                     <StackPanel>
                         <TextBlock Text="Demulshooter" HorizontalAlignment="Center" FontWeight="Bold"/>
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                             <TextBlock Text="Inject Gun4IR HID" VerticalAlignment="Center" Margin="0,0,0,0" />
-                            <ToggleButton Name="toggleDSUpdtlock" Width="60" Height="30" Margin="10,0,0,0" Checked="ToggleDSUpdtlock_Checked" Unchecked="ToggleDSUpdtlock_Unchecked" >
-                                <ToggleButton.Style>
-                                    <Style TargetType="ToggleButton">
-                                        <Setter Property="Content" Value="Off" />
-                                        <Style.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter Property="Content" Value="On" />
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ToggleButton.Style>
-                            </ToggleButton>
+                <ToggleButton Name="toggleDSUpdtlock" Width="60" Height="30" Margin="10,0,0,0" Checked="ToggleDSUpdtlock_Checked" Unchecked="ToggleDSUpdtlock_Unchecked" >
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Content" Value="Off" />
+                            <Style.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Content" Value="On" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
                             <TextBlock Text="(?)" Margin="4,0,0,0" VerticalAlignment="Center">
-                                <TextBlock.ToolTip>
-                                    <ToolTip Content="update config.ini of HID Gun4IR/Mayflash when launching a game" />
-                                </TextBlock.ToolTip>
-                            </TextBlock>
-                        </StackPanel>
+                    <TextBlock.ToolTip>
+                        <ToolTip Content="update config.ini of HID Gun4IR/Mayflash when launching a game" />
+                    </TextBlock.ToolTip>
+                </TextBlock>
+            </StackPanel>
                         <TextBlock Text="MameHooker" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,20,0,0"/>
                         <Button Content="Register OCX Files Mamehooker" Click="RegisterOCXFilesButton_Click" HorizontalAlignment="Center" Height="30" Margin="0,10,0,0"/>
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                             <TextBlock Text="Windows startup" VerticalAlignment="Center" Margin="5,0,0,0" />
-                            <ToggleButton x:Name="toggleStartupButton" Content="Off" Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" HorizontalAlignment="right" VerticalAlignment="Center" Width="60" Height="30" Margin="10,0,0,0"/>
+                <ToggleButton x:Name="toggleStartupButton" Content="Off" Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" HorizontalAlignment="right" VerticalAlignment="Center" Width="60" Height="30" Margin="10,0,0,0"/>
+            </StackPanel>
+        </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="2,2,2,2" Padding="10" Background="White">
+                    <StackPanel>
+                        <TextBlock Text="Edit_LsTRoms Update" HorizontalAlignment="Center" FontWeight="Bold"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0" HorizontalAlignment="Center">
+                            <TextBlock x:Name="AppUpdateStatus" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Ellipse x:Name="AppUpdateIndicator" Width="12" Height="12" Stroke="Black" StrokeThickness="1"/>
                         </StackPanel>
+                        <StackPanel Orientation="Vertical" Margin="0,5,0,0" HorizontalAlignment="Center">
+                            <TextBlock x:Name="AppCurrentVersionText" Text="Current: " Margin="0,0,0,2"/>
+                            <TextBlock x:Name="AppLatestVersionText" Text="Latest: " Margin="0,0,0,5"/>
+                        </StackPanel>
+                        <Button x:Name="appUpdateButton" Content="Update Edit_LsTRoms" Height="30" Margin="0,5,0,0" Click="AppUpdateButton_Click"/>
+                        <ProgressBar x:Name="appDownloadProgressBar" Height="5" Margin="0,5,0,0" Visibility="Collapsed"/>
                     </StackPanel>
                 </Border>
 
-                <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Padding="10" Background="White">
+                <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="2,2,2,2" Padding="10" Background="White">
                     <StackPanel>
                         <TextBlock Text="DemulShooter Update" HorizontalAlignment="Center" FontWeight="Bold"/>
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0" HorizontalAlignment="Center">
@@ -110,57 +126,75 @@
                         </TextBlock>
                     </StackPanel>
                 </Border>
+
+                <!-- ScriptPush Update Section -->
+                <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="2,2,2,2" Padding="10" Background="White">
+                    <StackPanel>
+                        <TextBlock Text="ScriptPush Update" HorizontalAlignment="Center" FontWeight="Bold"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0" HorizontalAlignment="Center">
+                            <TextBlock x:Name="ScriptPushUpdateStatus" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Ellipse x:Name="ScriptPushUpdateIndicator" Width="12" Height="12" Stroke="Black" StrokeThickness="1"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Vertical" Margin="0,5,0,0" HorizontalAlignment="Center">
+                            <TextBlock x:Name="ScriptPushCurrentVersionText" Text="Current: " Margin="0,0,0,2"/>
+                            <TextBlock x:Name="ScriptPushLatestVersionText" Text="Latest: " Margin="0,0,0,5"/>
+                        </StackPanel>
+                        <Button x:Name="scriptPushUpdateButton" Content="Update ScriptPush" Height="30" Margin="0,5,0,0" Click="ScriptPushUpdateButton_Click"/>
+                        <ProgressBar x:Name="scriptPushDownloadProgressBar" Height="5" Margin="0,5,0,0" Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+
             </StackPanel>
 
             <DockPanel DockPanel.Dock="Right" Width="270" Background="#E5E5E5">
-                <StackPanel Orientation="Vertical" Margin="10">
-                    <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="0,0,0,20" Padding="10" Background="White">
+                <StackPanel Orientation="Vertical" Margin="5">
+                    <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="2,2,2,2" Padding="10" Background="White">
                         <StackPanel>
                             <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" FontStyle="Italic" Foreground="#666666">
                                 Optional AutoHotkey functions: These features allow you to create custom scripts for additional game automation and control.
                             </TextBlock>
                             <TextBlock Name="selectedSystemTextBlock" HorizontalAlignment="Center" FontWeight="Bold"/>
                             <TextBlock Text="Autohotkey edit" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,10,0,0"/>
-                            <TextBlock Text="(?)" Margin="0,-15,0,0" VerticalAlignment="center">
-                                    <TextBlock.ToolTip>
-                                        <ToolTip Content="Autohotkey file for Game takes forever priority" />
-                                    </TextBlock.ToolTip>
-                                </TextBlock>
+                            <TextBlock Text="(?)" Margin="0,-10,0,0" VerticalAlignment="center">
+                        <TextBlock.ToolTip>
+                            <ToolTip Content="Autohotkey file for Game takes forever priority" />
+                        </TextBlock.ToolTip>
+                    </TextBlock>
                             <ListBox x:Name="ahkFilesListBox" SelectionChanged="AhkFilesListBox_SelectionChanged" HorizontalAlignment="Center" Margin="0,5,0,10" Width="220" Height="40" Background="#E5E5E5" />
                             <StackPanel Orientation="Vertical">              
                             <ListBox x:Name="ahkFilesListBoxGame" SelectionChanged="AhkFilesListBoxGame_SelectionChanged" Margin="0,-12,0,0" Width="220" Height="40" Background="#E5E5E5"/>
-                            </StackPanel>
+                </StackPanel>
                             <StackPanel Orientation="Vertical">
-                                <TextBlock Text="(?)" Margin="20,0,0,0" VerticalAlignment="center">
-                                    <TextBlock.ToolTip>
-                                        <ToolTip Content="Only compiled Autohotkey runs (you must manually copy your .ahk files into the /ahk folder of the game system to run them)" HorizontalAlignment="Center"/>
-                                    </TextBlock.ToolTip>
-                                </TextBlock>
+                                <TextBlock Text="(?)" Margin="10,0,0,0" VerticalAlignment="center">
+                        <TextBlock.ToolTip>
+                            <ToolTip Content="Only compiled Autohotkey runs (you must manually copy your .ahk files into the /ahk folder of the game system to run them)" HorizontalAlignment="Center"/>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
                                 <Button Content="Compile AHK" Click="CompileAhkButton_Click" HorizontalAlignment="Center" Width="160" Height="30" Margin="0,-10,0,0"/>
-                            </StackPanel>
+                </StackPanel>
                             <Button Content="Delete all Compiled AHK" Click="DeleteCompiledAhkButton_Click" HorizontalAlignment="Center" Width="160" Height="30" Margin="0,7,0,0"/>
-                            <TextBlock Text="Search .exe in Tasklist" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,13,0,0"/>
+                <TextBlock Text="Search .exe in Tasklist" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,13,0,0"/>
                             <TextBox x:Name="configTextBox" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Width="220" Height="50" Margin="0,5,0,10"/>
                             <Button Content="Save" Click="SaveConfigButton_Click" HorizontalAlignment="Center" Width="160" Height="30"/>
                         </StackPanel>
                     </Border>
 
-                    <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="0,0,0,20" Padding="10" Background="White">
+                    <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="2,2,2,2" Padding="10" Background="White">
                         <StackPanel>
                             <TextBlock Text="Autohotkey edit start/remap/end" HorizontalAlignment="Center" FontWeight="Bold"/>
                             <ListBox x:Name="ahkFilesListBoxCustom" SelectionChanged="AhkFilesListBoxCustom_SelectionChanged" HorizontalAlignment="Center" Margin="0,10,0,0" Width="220" Height="80" Background="#E5E5E5"/>
                             <StackPanel Orientation="Vertical">
-                                <TextBlock Text="(?)" Margin="20,0,0,0" VerticalAlignment="center">
-                                    <TextBlock.ToolTip>
-                                        <ToolTip Content="Only compiled Autohotkey runs (you must manually copy your .ahk files into the /ahk folder of the game system to run them)" HorizontalAlignment="Center"/>
-                                    </TextBlock.ToolTip>
-                                </TextBlock>
+                                <TextBlock Text="(?)" Margin="10,0,0,0" VerticalAlignment="center">
+                        <TextBlock.ToolTip>
+                            <ToolTip Content="Only compiled Autohotkey runs (you must manually copy your .ahk files into the /ahk folder of the game system to run them)" HorizontalAlignment="Center"/>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
                                 <Button Content="Compile Custom AHK" Click="CompileCustomAhkButton_Click" HorizontalAlignment="Center" Width="160" Height="30" Margin="0,-8,0,0"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
-                    <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Padding="10" Background="White">
+                    <Border BorderBrush="#999999" BorderThickness="2" CornerRadius="4" Margin="2,2,2,2" Padding="10" Background="White">
                         <StackPanel>
                             <TextBlock Text="Search .exe in Tasklist for nomousy" HorizontalAlignment="Center" FontWeight="Bold"/>
                             <TextBox x:Name="configTextNomousyBox" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" Width="220" Height="50" Margin="0,10,0,10"/>
@@ -168,7 +202,7 @@
                         </StackPanel>
                     </Border>
 
-                    <TextBlock x:Name="confirmationTextBlock" HorizontalAlignment="Center" FontWeight="Bold" Height="auto" Margin="0,10,0,0"/>
+                    <TextBlock x:Name="confirmationTextBlock" HorizontalAlignment="Center" FontWeight="Bold" Height="auto" Margin="0,5,0,0"/>
                 </StackPanel>
             </DockPanel>
             <Grid Background="#E5E5E5">
@@ -198,5 +232,5 @@
                 </DataGrid>
             </Grid>
         </DockPanel>
-    </Grid>
+        </Grid>
 </Window>
