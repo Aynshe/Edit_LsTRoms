@@ -17,12 +17,13 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     
-    <!-- Désactiver complètement la génération automatique des attributs d'assembly -->
+    <!-- Désactiver la génération automatique des attributs d'assembly -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     
-    <!-- Information de version -->
-    <FileVersion>1.0.0</FileVersion>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <!-- Versions -->
+    <Version>1.2.1</Version>
+    <FileVersion>1.2.1</FileVersion>
+    <AssemblyVersion>1.2.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
